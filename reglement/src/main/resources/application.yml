@@ -1,0 +1,55 @@
+spring :
+  application:
+    name: reglement
+    
+#  h2:
+#    console:
+#      enabled: true
+#  datasource:
+#    url: jdbc:h2:mem:reglement
+  
+server:
+  port: 8083
+
+keycloak:
+  realm: poc
+  auth-server-url: http://localhost:8180
+  client-id: reglement
+  client-secret: "secret"
+  
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  
+---    
+ spring:
+#  config:
+#    activate:
+#      on-profile: native
+  r2dbc:
+      url: r2dbc:postgresql://localhost:5462/reglement_db
+      username: postgres
+      password: postgres
+      initialization-mode: never
+  data:
+      r2dbc:
+        initialization-mode: never
+
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+#          issuer-uri: http://localhost:8180/realms/poc
+          jwk-set-uri: http://localhost:8180/realms/poc/protocol/openid-connect/certs
+ logging:
+   level:
+     org:
+       springframework:
+         security: DEBUG
+     reactor:
+       netty:
+         http:
+           client: DEBUG

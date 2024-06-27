@@ -1,0 +1,293 @@
+{
+  "openapi" : "3.0.3",
+  "info" : {
+    "title" : "reglement API",
+    "description" : "reglement API",
+    "version" : "1.0.0"
+  },
+  "servers" : [ {
+    "url" : "https://reglement"
+  } ],
+  "paths" : {
+    "/api/reglements" : {
+      "get" : {
+        "summary" : "GET api/reglements",
+        "operationId" : "getAllReglement",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/FichierEnteteReglementDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "summary" : "POST api/reglements",
+        "operationId" : "createReglement",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/SoldeCompensationDTO"
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FichierEnteteReglementDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reglements/{id}" : {
+      "get" : {
+        "summary" : "GET api/reglements/{id}",
+        "operationId" : "getReglementById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FichierEnteteReglementDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "summary" : "PUT api/reglements/{id}",
+        "operationId" : "updateReglement",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FichierEnteteReglementDTO"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FichierEnteteReglementDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "DELETE api/reglements/{id}",
+        "operationId" : "deleteReglement",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
+    "/api/reglements/criteria/{id}" : {
+      "get" : {
+        "summary" : "GET api/reglements/criteria/{id}",
+        "operationId" : "getReglementByJourneeCompensation",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/FichierEnteteReglementDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reglements/criteria/details/{id}" : {
+      "get" : {
+        "summary" : "GET api/reglements/criteria/details/{id}",
+        "operationId" : "getDetailsReglementByIdReglement",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/FichierDetailsReglementDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "FichierEnteteReglementDTO" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "nomFichier" : {
+            "type" : "string"
+          },
+          "dateCreation" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "idJourneeCompense" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "BigDecimal" : {
+        "type" : "object",
+        "properties" : { }
+      },
+      "SoldeCompensationDTO" : {
+        "type" : "object",
+        "properties" : {
+          "journeeCompensationId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "idSoldeCompense" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "dateOperation" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "banqueId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "solde" : {
+            "$ref" : "#/components/schemas/BigDecimal"
+          },
+          "etatSoldeCompensation" : {
+            "type" : "string"
+          }
+        }
+      },
+      "FichierDetailsReglementDTO" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "journeeCompensationId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "idSoldeCompense" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "dateOperation" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "banqueId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "solde" : {
+            "$ref" : "#/components/schemas/BigDecimal"
+          },
+          "etatSoldeCompensation" : {
+            "type" : "string"
+          },
+          "fichierEnteteReglement" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      }
+    }
+  }
+}

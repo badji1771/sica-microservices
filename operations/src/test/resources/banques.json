@@ -1,0 +1,31 @@
+[{
+  "code": "CI000",
+  "libelle": "BCEAO-CI000",
+  "etat": "ACTIVE"
+},
+  {
+    "code": "BF023",
+    "libelle": "BICIA-B-BF023",
+    "etat": "ACTIVE"
+  },
+  {
+    "code": "BF056",
+    "libelle": "BCB-BF056",
+    "etat": "ACTIVE"
+  },
+  {
+    "code": "CI000",
+    "libelle": "BCB-CI0000",
+    "etat": "ACTIVE"
+  },
+  {
+    "code": "CI007",
+    "libelle": "BCB-CI007",
+    "etat": "ACTIVE"
+  },
+  {
+    "code": "CI006",
+    "libelle": "BCB-CI006",
+    "etat": "ACTIVE"
+  }
+]

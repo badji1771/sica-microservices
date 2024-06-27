@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<menu-config xmlns="http://jmix.io/schema/flowui/menu">
+
+    <menu id="application" title="msg://org.formation.sica.gatewaysica/menu.application.title" opened="true">
+        <item view="User.list" title="msg://org.formation.sica.gatewaysica.view.user/UserListView.title"/>
+        <item view="Reglement.list"
+              title="msg://org.formation.sica.gatewaysica.view.reglement/reglementListView.title"/>
+        <item view="JourneeCompensation.list"
+              title="msg://org.formation.sica.gatewaysica.view.journeecompensation/journeeCompensationListView.title"/>
+    </menu>
+
+</menu-config>

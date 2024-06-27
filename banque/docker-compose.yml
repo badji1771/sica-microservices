@@ -1,0 +1,20 @@
+services:
+  banque-bd:
+    image: 'postgres:15.2'
+    restart: always
+    ports:
+    - '5437:5432'
+    environment:
+    - 'POSTGRES_USER=postgres'
+    - 'POSTGRES_DB=banque'
+    - 'POSTGRES_PASSWORD=postgres'
+    
+  banque-pg:
+    image: dpage/pgadmin4
+    container_name: pgadmin4_banque-pg
+    restart: always
+    ports:
+      - "8889:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admi@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin

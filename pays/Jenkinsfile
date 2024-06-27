@@ -1,0 +1,164 @@
+
+pipeline {
+   agent none 
+    tools {
+        jdk 'JDK17'
+    }
+    stages {
+        stage('Test and packaging') {
+            agent any
+            steps {
+                
+                  echo 'Serveur de config démarré avec succès.'
+                  sh './gradlew clean test'
+            }
+             post {
+                always {
+                    junit 'build/test-results/test/*.xml'
+                }
+                failure {
+                    mail bcc: '', body: 'Please review', cc: '', from: '', replyTo: '', subject: 'Build failed', to: 'david.thibau@sparks.com'
+                }
+            }
+        }
+
+
+        stage('Analyse qualité et vulnérabilités') {
+            parallel {
+                stage('Java doc') {
+                    agent any
+                    steps {
+                        sh './gradlew generateJavadoc'
+                        publishHTML([allowMissing: false,alwaysLinkToLastBuild: false,keepAll: false, reportDir: 'build/docs/javadoc',reportFiles: 'index.html',reportName: 'Javadoc',reportTitles: ''])
+                    }
+                }
+                stage('Vulnérabilités') {
+                    agent any
+                    steps {
+                        echo 'Tests de Vulnérabilités OWASP'
+                        sh './gradlew dependencyCheckAnalyze'
+                        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/reports', reportFiles: 'dependency-check-report.html', reportName: 'Dependency Check', reportTitles: '', useWrapperFileDirectly: true])
+                    }
+                    
+                }
+                 stage('Analyse Sonar') {
+                    agent any
+                    environment {
+                        SONAR_TOKEN = credentials('SONAR_TOKEN') // Récupère le token Sonar depuis les credentials
+                        SPRING_ACTIVE_PROFILES = "integration"
+                    }
+                     steps {
+                        echo 'Analyse sonar'
+                        withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
+                                    echo 'Serveur de config démarré avec succès.'
+                                    sh './gradlew check jacocoTestReport sonar'
+	                     }
+	                    script {
+                                checkSonarQualityGate()
+                         }
+                     }
+                }
+            }
+            
+        }
+                stage('Déploiement intégration') {
+                    agent any
+                    environment {
+                        DTHIBAU_DOCKER = credentials('dthibau_docker') // Récupère le token Sonar depuis les credentials
+                    }
+                    steps {
+                        echo 'Déploiement intégration'
+                        sh "./gradlew bootBuildImage"
+                        script {
+                            docker.withRegistry('https://registry.hub.docker.com', 'dthibau_docker') {
+                            def version = sh script: ' ./gradlew properties | grep version', returnStdout: true
+                            version = version.substring(9,version.length() -1)
+                            sh 'env'
+                            sh 'docker login -u $DTHIBAU_DOCKER_USR -p $DTHIBAU_DOCKER_PSW'
+                            sh "docker tag pays:${version} dthibau/poc-pays:${version}"
+                            sh "docker push dthibau/poc-pays:${version}"
+                            try {
+                                sh 'docker stop poc-pays'
+                                sh 'docker rm -f poc-pays'
+                            } catch (Exception e) {
+                                echo "Container poc-pays does not exist or could not be removed."
+                            }
+                            sh """docker run -e SERVER_PORT=8080 -p 10003:8080 \
+                                    -e SPRING_ACTIVE_PROFILES=integration \
+                                    --network poc-integration -d --name poc-pays dthibau/poc-pays:${version}"""
+                        }
+                    }
+                }
+            }
+        stage('Release') {
+            agent any
+            when {
+                branch 'main'
+                beforeOptions true
+                beforeInput true
+                beforeAgent true
+            }
+
+            input {
+                message 'Voulez-vous effectuer une release ?'
+                ok 'Release !'
+                parameters {
+                    string description: 'N° de version', name: 'newVersion'
+                }
+            }
+            environment {
+                DTHIBAU_DOCKER = credentials('dthibau_docker') // Récupère le token Sonar depuis les credentials
+            }
+            steps {
+                echo 'Release'
+                sh "./gradlew bootBuildImage --imageName=dthibau/poc-pays:${newVersion}"
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'dthibau_docker') {
+                        def version = params.newVersion
+                        sh 'env'
+                        sh 'docker login -u $DTHIBAU_DOCKER_USR -p $DTHIBAU_DOCKER_PSW'
+                        sh "docker push dthibau/poc-pays:${newVersion}"
+                    }    
+                }
+            }
+        }
+     } 
+}
+
+def checkSonarQualityGate(){
+    // Get properties from report file to call SonarQube 
+    def sonarReportProps = readProperties  file: 'build/sonar/report-task.txt'
+    def sonarServerUrl = sonarReportProps['serverUrl']
+    def ceTaskUrl = sonarReportProps['ceTaskUrl']
+    def ceTask
+
+    // Get task informations to get the status
+    timeout(time: 4, unit: 'MINUTES') {
+        waitUntil(initialRecurrencePeriod: 1000)  {
+            withCredentials ([string(credentialsId: 'SONAR_TOKEN', variable : 'token')]) {
+                def response = sh(script: "curl -u ${token}: ${ceTaskUrl}", returnStdout: true).trim()
+                ceTask = readJSON text: response
+            }
+
+            echo ceTask.toString()
+              return "SUCCESS".equals(ceTask['task']['status'])
+        }
+    }
+
+    // Get project analysis informations to check the status
+    def ceTaskAnalysisId = ceTask['task']['analysisId']
+    def qualitygate
+
+    withCredentials ([string(credentialsId: 'SONAR_TOKEN', variable : 'token')]) {
+        def response = sh(script: "curl -u ${token}: ${sonarServerUrl}/api/qualitygates/project_status?analysisId=${ceTaskAnalysisId}", returnStdout: true).trim()
+        qualitygate =  readJSON text: response
+    }
+
+    echo qualitygate.toString()
+    if (!("OK".equals(qualitygate['projectStatus']['status']))) {
+        error "Quality Gate failure"
+    }
+}
+
+
+

@@ -1,0 +1,72 @@
+spring :
+  h2:
+    console:
+      enabled: true
+  datasource:
+    url: jdbc:h2:mem:dcbapp
+  docker:
+    compose:
+      enabled: false  
+
+pays-service:
+  url: http://pays
+---
+spring:
+  config:
+    activate:
+      on-profile:
+      - replica
+server:
+  port: 9083
+
+---
+spring:
+  config:
+    activate:
+      on-profile: integration
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+  datasource:
+    url: jdbc:postgresql://banque-bd:5432/banque
+    username: postgres
+    password: postgres
+  h2:
+    console:
+      enabled: false
+
+  docker:
+    compose:
+      enabled: false
+      file: docker-compose.yml
+
+pays-service:
+  url: http://pays
+  
+---    
+ spring:  
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+  datasource:
+    url: jdbc:postgresql://banque:5432/banque
+    username: postgres
+    password: postgres
+  h2:
+    console:
+      enabled: false
+    
+  docker:
+    compose:
+      enabled: false
+      file: docker-compose.yml
+
+ pays-service:
+   url: http://pays

@@ -1,0 +1,63 @@
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka:1111/eureka/
+    healthcheck:
+      enabled: true
+    preferSameZoneEureka: true
+  instance:
+#    prefer-ip-address: true
+    metadataMap:
+      zone: zone1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  tracing:
+    enabled: true
+    sampling.probability: 1.0
+
+        
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.LongSerializer    
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer  
+    consumer:
+       key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+       properties:
+         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.LongDeserializer
+         spring.json.trusted.packages: '*'  
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/poc
+        
+channels:
+  fermetureJournee: 'FermetureJournee'
+  fermetureJournee_response: 'FermetureJourneeResponse'
+  soldesCompensation: 'SoldesCompensation'
+
+---
+spring:
+  config:
+    activate:
+      on-profile: integration
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/poc

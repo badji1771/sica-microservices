@@ -1,0 +1,70 @@
+spring :
+ h2:
+  console:
+   enabled: true
+ datasource:
+  url: jdbc:h2:mem:compense_db
+ jpa:
+  show-sql: true
+
+
+server:
+  port: 8090
+
+---
+spring:
+ config:
+  activate:
+   on-profile: prod
+ datasource:
+  url: jdbc:postgresql://localhost:5462/compense_db
+  username: postgres
+  password: postgres
+  driver-class-name: org.postgresql.Driver
+ jpa:
+  database-platform: org.hibernate.dialect.PostgreSQLDialect
+  hibernate:
+   ddl-auto: update
+
+
+logging:
+ level:
+  root: INFO
+  org.formation: DEBUG # Niveau de journal pour un package spécifique (remplacez "com.example.package" par le package de votre application)
+ pattern:
+  console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+docker:
+    compose:
+      enabled: true
+      file: docker-compose.yml
+
+
+---
+spring:
+ config:
+  activate:
+   on-profile: integration
+ datasource:
+  url: jdbc:postgresql://compensation-postgresql:5432/compense_db
+  username: postgres
+  password: postgres
+  driver-class-name: org.postgresql.Driver
+ jpa:
+  database-platform: org.hibernate.dialect.PostgreSQLDialect
+  hibernate:
+   ddl-auto: update
+
+
+logging:
+ level:
+  root: DEBUG
+  org.formation: DEBUG
+  org.springframework: INFO
+  org.hibernate: WARN
+ file:
+  path: logs/app-integration.log
+ pattern:
+  console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+

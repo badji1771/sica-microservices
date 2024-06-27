@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: banque
+    
+  cloud:
+    server: 
+      config:
+        uri:
+        -http: //localhost:8888
+        fail-fast: true
+
+     

@@ -1,0 +1,14 @@
+[
+	{
+		"codeIso": "SN",
+		"libelle": "Sénégal"
+	},
+	{
+		"codeIso": "CI",
+		"libelle": "Cote d'Ivoire"
+	},
+	{
+		"codeIso": "TG",
+		"libelle": "Togo"
+	}
+]

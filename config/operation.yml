@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: operation
+  datasource:
+    url: jdbc:h2:mem:testdb
+  h2:
+    console:
+      enabled: true
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    show-sql: true
+
+     
+---    
+spring:  
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    hibernate:
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+      ddl-auto: none
+      show-sql: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/db_operation
+    username: postgres
+    password: postgres
+
+docker:
+    compose:
+      enabled: true
+      file: docker-compose.yml
+
+---
+spring:
+  config:
+    activate:
+      on-profile: integration
+  jpa:
+    hibernate:
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+      ddl-auto: update
+      show-sql: true
+  datasource:
+    url: jdbc:postgresql://operation-postgresql:5432/db_operation
+    username: postgres
+    password: postgres
+
+  h2:
+    console:
+      enabled: false
+docker:
+  compose:
+    enabled: false
+    file: docker-compose.yml

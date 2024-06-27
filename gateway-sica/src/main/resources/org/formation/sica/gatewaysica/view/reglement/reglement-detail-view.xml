@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://reglementDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="reglementDc"
+                  class="org.formation.sica.gatewaysica.entity.Reglement">
+            <loader id="reglementDl" />
+        </instance>
+        <collection id="detailsReglementDc" class="org.formation.sica.gatewaysica.entity.DetailsReglement">
+<!--
+            <loader id="detailsReglementsDl" readOnly="true" />
+-->
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="reglementDc"  >
+            <!--<textField id="idField" property="id"/>-->
+            <textField id="nomFichierField" property="nomFichier" readOnly="true"/>
+            <datePicker id="dateCreationField" property="dateCreation" readOnly="true"/>
+        </formLayout>
+        <hbox id="detailActions">
+            <button id="saveAndCloseBtn" action="saveAction"/>
+            <button id="closeBtn" action="closeAction"/>
+        </hbox>
+        <dataGrid width="100%" id="detailsReglementsDataGrid" dataContainer="detailsReglementDc">
+            <actions/>
+            <columns resizable="true">
+                <column property="id"/>
+                <column property="solde"/>
+                <column property="etatSoldeCompensation"/>
+                <column property="dateOperation"/>
+            </columns>
+        </dataGrid>
+
+    </layout>
+</view>

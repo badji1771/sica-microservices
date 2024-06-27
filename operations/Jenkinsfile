@@ -1,0 +1,156 @@
+
+pipeline {
+   agent none 
+    tools {
+        jdk 'JDK17'
+    }
+    stages {
+        stage('Test en isolation') {
+            agent any
+            steps {
+                sh './mvnw -Dmaven.test.failure.ignore=true clean test'
+            }
+             post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                }
+                failure {
+                    mail bcc: '', body: 'Please review', cc: '', from: '', replyTo: '', subject: 'Build failed', to: 'david.thibau@sparks.com'
+                }
+            }
+        }
+
+
+        stage('Analyse qualité et vulnérabilités') {
+            parallel {
+                stage('Vulnérabilités') {
+                    agent any
+                    steps {
+                        echo 'Tests de Vulnérabilités OWASP'
+                        sh './mvnw -DskipTests verify'
+                        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'target/', reportFiles: 'dependency-check-report.html', reportName: 'Dependency Check', reportTitles: '', useWrapperFileDirectly: true])
+                    }
+                    
+                }
+                 stage('Analyse Sonar') {
+                    agent any
+                    environment {
+                        SONAR_TOKEN = credentials('SONAR_TOKEN') // Récupère le token Sonar depuis les credentials
+                    }
+                     steps {
+                        echo 'Analyse sonar'
+                        withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
+                            sh './mvnw -Dsonar.token=${SONAR_TOKEN} -Dmaven.test.failure.ignore=true integration-test sonar:sonar'
+	                     }
+	                     script {
+                                checkSonarQualityGate()
+                         }
+                     }
+                }
+            }
+            
+        }
+        stage('Déploiement intégration') {
+            agent any
+            environment {
+                DTHIBAU_DOCKER = credentials('dthibau_docker') // Récupère le token Sonar depuis les credentials
+                SPRING_PROFILES_ACTIVE = 'integration'
+            }
+            steps {
+                echo 'Déploiement intégration'
+                sh "./mvnw -DskipTests spring-boot:build-image"
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'dthibau_docker') {
+                    def version = sh script: './mvnw help:evaluate -Dexpression=project.version -q -DforceStdout', returnStdout: true
+                    sh 'env'
+                    sh 'docker login -u $DTHIBAU_DOCKER_USR -p $DTHIBAU_DOCKER_PSW'
+                    sh "docker tag operation:${version} dthibau/poc-operation:${version}"
+                    sh "docker push dthibau/poc-operation:${version}"
+                    try {
+                        sh 'docker stop poc-operation'
+                        sh 'docker rm -f poc-operation'
+                    } catch (Exception e) {
+                        echo "Container poc-operation does not exist or could not be removed."
+                    }
+                    sh """docker run -e SERVER_PORT=8080 -p 10002:8080 \
+                               -e SPRING_CLOUD_CONFIG_URI=http://cloud-config-server:8888 \
+                               -e SPRING_PROFILES_ACTIVE=integration \
+                               -e EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:1111 \
+                               --network poc-integration -d --name poc-operation dthibau/poc-operation:${version}"""
+                }
+            }
+        }
+    }
+        stage('Release') {
+            agent any
+            when {
+                branch 'main'
+                beforeOptions true
+                beforeInput true
+                beforeAgent true
+            }
+
+            input {
+                message 'Voulez-vous effectuer une release ?'
+                ok 'Release !'
+                parameters {
+                    string description: 'N° de version', name: 'newVersion'
+                }
+            }
+            environment {
+                DTHIBAU_DOCKER = credentials('dthibau_docker') // Récupère le token Sonar depuis les credentials
+            }
+            steps {
+                echo 'Release'
+                sh "./mvnw -DskipTests spring-boot:build-image -Dspring-boot.build-image.imageName=dthibau/poc-operation:${newVersion}"
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'dthibau_docker') {
+                        def version = params.newVersion
+                        sh 'env'
+                        sh 'docker login -u $DTHIBAU_DOCKER_USR -p $DTHIBAU_DOCKER_PSW'
+                        sh "docker push dthibau/poc-operation:${newVersion}"
+                    }    
+                }
+            }
+        }
+
+     } 
+}
+
+def checkSonarQualityGate(){
+    // Get properties from report file to call SonarQube 
+    def sonarReportProps = readProperties  file: 'target/sonar/report-task.txt'
+    def sonarServerUrl = sonarReportProps['serverUrl']
+    def ceTaskUrl = sonarReportProps['ceTaskUrl']
+    def ceTask
+
+    // Get task informations to get the status
+    timeout(time: 4, unit: 'MINUTES') {
+        waitUntil(initialRecurrencePeriod: 1000)  {
+            withCredentials ([string(credentialsId: 'SONAR_TOKEN', variable : 'token')]) {
+                def response = sh(script: "curl -u ${token}: ${ceTaskUrl}", returnStdout: true).trim()
+                ceTask = readJSON text: response
+            }
+
+            echo ceTask.toString()
+              return "SUCCESS".equals(ceTask['task']['status'])
+        }
+    }
+
+    // Get project analysis informations to check the status
+    def ceTaskAnalysisId = ceTask['task']['analysisId']
+    def qualitygate
+
+    withCredentials ([string(credentialsId: 'SONAR_TOKEN', variable : 'token')]) {
+        def response = sh(script: "curl -u ${token}: ${sonarServerUrl}/api/qualitygates/project_status?analysisId=${ceTaskAnalysisId}", returnStdout: true).trim()
+        qualitygate =  readJSON text: response
+    }
+
+    echo qualitygate.toString()
+    if (!("OK".equals(qualitygate['projectStatus']['status']))) {
+        error "Quality Gate failure"
+    }
+}
+
+
+

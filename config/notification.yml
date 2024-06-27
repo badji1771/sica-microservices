@@ -1,0 +1,8 @@
+
+      
+      
+notification:
+  host: localhost
+  port: 2525
+  username: toto
+  password: secret
